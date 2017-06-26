@@ -24,7 +24,11 @@ print("Video opened with framecount of {:4,d}, dimensions ({:4d},{:4d}), and spe
 #fourcc = cv2.VideoWriter_fourcc(*"H264")
 fourcc = cv2.VideoWriter_fourcc(*"DIVX")
 
-video_filename='project_video_totalheat_160in20_80_160_200_X.25.mp4'
+# space for four frames showing heatmaps
+framewidth = framewidth+framewidth//4
+
+
+video_filename='project_video_5in7over3_80_X.25.mp4'
 out = cv2.VideoWriter(video_filename, fourcc, fps, (framewidth, frameheight))
 print("Writing to video file {}".format(video_filename))
 
@@ -44,7 +48,7 @@ t1 = time.time()
 
 total_heat_threshold = 160
 history_heat_threshold = 3
-history_threshold = 16
+history_threshold = 5
 
 while(cap.isOpened()):
     frames += 1
@@ -65,17 +69,27 @@ while(cap.isOpened()):
         output=image1
 
         draw_img, boxes, histheat, heat = find_cars(image1, car_values, history_heat_threshold, history_threshold)
-        heat = apply_threshold(car_values.getheatval(),total_heat_threshold)
-
-        labels = label(heat)
-        output = draw_labeled_bboxes(output,labels)
+        #heat = apply_threshold(car_values.getheatval(),total_heat_threshold)
+        heat = car_values.getlastheatval()[:,:,0] #only using first layer for test
+        heat[heat<3]=0
+        #labels = label(heat)
+        #output = draw_labeled_bboxes(output,labels)
 
         msecs = float(cap.get(cv2.CAP_PROP_POS_MSEC))
+
+
 
         #image1BGR = cv2.cvtColor(draw_img, cv2.COLOR_RGB2BGR)
         #image1BGR = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
         #out.write(image1BGR)
-        out.write(output)
+        image = np.zeros((frameheight,framewidth,3),dtype=np.uint8)
+        #image[0:720,0:1280,:] = output
+        image[0:720,0:1280,:] = cv2.cvtColor(draw_img, cv2.COLOR_RGB2BGR)
+        image[0:180,1280:,2] = cv2.resize(heat[:,:]*20, (320,180), interpolation=cv2.INTER_AREA)
+        #image[180:360,1280:,1] = heat[:,:,1]*20
+        #image[360:540,1280:,2] = heat[:,:,2]*20
+        #image[540:720,1280:,:] = np.sum(heat,axis=0)*10
+        out.write(image)
         t2=time.time()
         print("Frames: {0:02d}, Seconds: {1:03.03f} Processing Time per frame: {2:03.03f} s, Total Processing Time: {3:05.03f}s".format(frames, frames/fps, t2-t1, t2-t0), end='\r')
         t1=time.time()
