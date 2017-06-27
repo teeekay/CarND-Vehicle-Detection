@@ -79,7 +79,7 @@ The error rate generally was due to false positives for detection of cars on ima
 
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure6.png?raw=true"  width=700>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure6.png?raw=true"  width=400>
 
 <i><u>Figure 6: Plot of Accuracy results as log10 C is varied</u></i>
 
@@ -88,15 +88,56 @@ The error rate generally was due to false positives for detection of cars on ima
 
 ### Sliding Window Search
 
-I initially set up a sliding image search with 5 sizes of windows (40 pixels, 80 pixels, 120 pixels, 160 pixels and 200 pixels).  After experimentation, and specifically after visualizing the results of each size window, I realized that I was able to obtain the best results when using 80 pixel windows alone.  This was partially because it reduced the size of false positives which lingered from frame to frame, making 
-![alt text][image3]
+I initially set up a sliding image search with 5 sizes of windows (edge lengths 40 pixels, 80 pixels, 120 pixels and 200 pixels).  After experimentation, and specifically after visualizing the response when using each size window, I realized that I was able to obtain the best results when using 80 pixel windows alone.  The smaller 40 pixel wide windows did not detect smaller cars on the horizon, but took a large amount of processing time, so I also dropped them.   I found that the use of windows larger than 80 pixels width added more false positives, but did not really add any better detection of cars that were not picked up by the 80 pixel windows.  Furthermore, I limit false positives in the videostream by using a buffer of heat images, and thresholding pixels that have had heat for a specified number of frames.  However, with the larger windows, I found that this caused larger areas to remain hot for long periods and preventing this required the use of a large history threshold (up to 15 frames) which caused a significant delay in displaying valid hits.  Removal of the larger window sizes enabled the history threshold to be reduced down to 5 frames, enabling much faster display of detected cars.   Figure 7 shows the grid of 80 pixel wide windows overlapping at a ratio of 0.25 across an example image frame.
 
-####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
-
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
-
-![alt text][image4]
 ---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure7.png?raw=true"  width=1000>
+
+<i><u>Figure 7: Visualization of overlapping 80 pixel Sliding Window Search Area</u></i>
+
+---
+
+The sliding windows algorithm was implemented in the function `process_windows()` in [MultiWindow.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/MultiWindow.py).  I attempted to optimize the algorithm with a single run on the HOG gradients for the entire image strip that the sliding windows passed over for each window size.  Implementing this caused me to resize the HOG window size (as described above) to 16x16 so that it was easier to set up specific overlap ratios with this method.
+
+Figures 8, 9 and 10 illustrate the process of car detection;  In figure 8 the SVM has identified overlapping patches as containing car(s).  In Figure 9 the pixels in the overlapping patches have been summed to create a heatmap. In figure 10 a bounding box has been drawn to encompass all pixels with heat values in excess of a threshold value, and this corresponds approximately to the car location(s). 
+ 
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure8.png?raw=true"  width=1000>
+
+<i><u>Figure 8: Visualization of Overlapping windows where SVM detected a Car</u></i>
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure9.png?raw=true"  width=1000>
+
+<i><u>Figure 9: Visualization of Heat created by adding overlapping SVM Detections of Cars</u></i>
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10.png?raw=true"  width=1000>
+
+<i><u>Figure 10: Identification of Car Location based on Thresholded Heat Values</u></i>
+
+---
+
+The following images demonstrate where cars were identified on all of the images in the sample folder.  A threshold heat value of 4 was used to discriminate between 
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_1.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_2.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_3.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_4.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_5.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_6.png?raw=true"  width=1000>
+
+<i><u>Figure 10: Identification of Car Location based on Thresholded Heat Values</u></i>
+
+---
+
+
 
 ### Video Implementation
 
