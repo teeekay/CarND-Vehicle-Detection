@@ -10,6 +10,7 @@ import glob
 import random
 import time
 import pickle
+from operator import itemgetter
 
 #%config InlineBackend.figure_format='svg'
 # length of side of sliding windows used
@@ -67,22 +68,26 @@ def show_hit(heatmap):
 def draw_labeled_bboxes(img, labels):
     # Iterate through all detected cars
     boxcolors = ((0,255,0),(0,0,255),(0,255,255),(255,0,0),(255,255,255),(255,255,255),(255,255,255),(255,255,255))
-    i = 0
-    #switched order for this video because cars are at right side, noise at left, but labels numbered from right
-    for car_number in range(labels[1],0,-1):
+    bbox = []
+    for car_number in range(1,labels[1]+1):
         # Find pixels with each car_number label value
         nonzero = (labels[0] == car_number).nonzero()
         # Identify x and y values of those pixels
         nonzeroy = np.array(nonzero[0])
         nonzerox = np.array(nonzero[1])
         # Define a bounding box based on min/max x and y
-        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        bbox.append(((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy))))
+
+    # sort by right co-ordinate to try to keep car boxes having same colors (steady cars to right, oncoming cars to left)
+    bbox = sorted(bbox, key=lambda x: x[1][0])
+    colorindex = 0
+    for boxnum in range(labels[1]-1,-1,-1):
         # Draw the box on the image
-        cv2.rectangle(img, bbox[0], bbox[1], boxcolors[i], 2)
-        if i > len(boxcolors) - 1:
-            i = len(boxcolors) - 1
+        cv2.rectangle(img, bbox[boxnum][0], bbox[boxnum][1], boxcolors[colorindex], 2)
+        if colorindex > len(boxcolors) - 1:
+            colorindex = len(boxcolors) - 1
         else:
-            i += 1
+            colorindex += 1
     # Return the image
     return img
 
@@ -133,14 +138,10 @@ class car_finder():
     def set_overlap(self, overlapval):
         self.overlapratioval = overlapval
 
-def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15):
+def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15, external_markup=False):
 
-    #test_strip40 = np.copy(test_image[400:480,320:1280,:]) #for 40*40
-#    test_strip80 = np.copy(test_image[400:520,320:1280,:]) #for 80x80
-#    test_strip120 = np.copy(test_image[400:580,320:1280,:]) #for 120x120
-#    test_strip160 = np.copy(test_image[400:600,320:1280,:]) #for 160x160
     box_dim80 = (80,80)
-    test_strip80 = np.copy(test_image[400:520,80:1280,:]) #for 80x80
+    test_strip80 = np.copy(test_image[400:540,80:1280,:]) #for 80x80
     origin_80 = (80,400)
 
     box_dim120 = (120,120)
@@ -201,6 +202,7 @@ def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15):
     boxes = []
     #store all the patches that svc matched on in boxes[]
     for i in choices.nonzero()[0]:
+    #for i in range(len(window_locs)): #use this line to show all boxes
         boxes.append(window_locs[i])
 
     #dynamic_heat_threshold = len(boxes)//5
@@ -213,41 +215,58 @@ def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15):
 
     blankheat = np.zeros((test_image.shape[0], test_image.shape[1], 3), dtype=np.uint8)
     heat = add_heat(blankheat, boxes)
-
     heatmap = carfinder.addheat(heat, heat_clip_threshold)
-
     heatmap[heatmap<history_bar]=0 #by default only show if more than 15 matches in history
 
     #keep everything in range
     heatmap = np.clip(heatmap, 0, 255)
-    # Find final boxes from heatmap using label function
-    labels = label(heatmap)
-    draw_img = draw_labeled_bboxes(np.copy(test_image_rgb), labels)
-
-    return draw_img, boxes, heatmap, heat
+    if external_markup == False:
+        # Find final boxes from heatmap using label function
+        labels = label(heatmap)
+        draw_img = draw_labeled_bboxes(np.copy(test_image_rgb), labels)
+        return draw_img, boxes, heatmap, heat, test_boxes
+    else:
+        return
 
 '''
 %matplotlib inline
 
 road_images = glob.glob('./test_images/*.jpg')
+i=1
 for frame in road_images:
     car_values = car_finder()
     test_image = cv2.imread(frame)
-    draw_img, boxes, histheat, heat = find_cars(test_image, car_values, 4, history_bar=1)
+    draw_img, boxes, histheat, heat, test_boxes = find_cars(test_image, car_values, 4, history_bar=1)
+
+    fig = plt.figure(figsize=(18,6))
+    plt.imshow(test_boxes)
+    #plt.title('80 pixel Sliding Window Search')
+    plt.title('Window Search Hits')
+    fig.tight_layout()
+    #plt.savefig("./output_images/figure8.png")
+
     fig = plt.figure(figsize=(18,6))
     plt.imshow(draw_img)
+    plt.title('Cars Located')
+    fig.tight_layout()
+    imagefilename="./output_images/figure10_"+str(i)+".png"
+    plt.savefig(imagefilename)
 
     heat = car_values.getlastheatval()
-    heat = heat * 20
-    print("heat total value is {}" .format(heat.sum()))
+    heat = heat * 40
     fig = plt.figure(figsize=(18,6))
-    plt.imshow(heat)
-
-
+    plt.imshow(heat,cmap='hot')
+    plt.title('Heat Map')
+    fig.tight_layout()
+    #plt.savefig("./output_images/figure9.png")
 
     fig = plt.figure(figsize=(18,6))
     plt.imshow(histheat,cmap='hot')
-    print(histheat.shape)
+    plt.title('Binary Heat Map')
+    fig.tight_layout()
+
+    i += 1
+
 
 
     #plt.imshow(heat,cmap='hot')

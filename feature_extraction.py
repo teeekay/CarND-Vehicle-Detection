@@ -82,7 +82,7 @@ def extract_features(img_set, loadfromnames=True, cspace='BGR', spatial_size=(8,
             image = cv2.cvtColor(image, colorchange)
         #resize if required
         if image.shape[1::-1] != spatial_size:
-            image_r = cv2.resize(image, spatial_size)
+            image_r = cv2.resize(image, spatial_size,interpolation=cv2.INTER_AREA)
         else:
             image_r = image
 
@@ -98,7 +98,7 @@ def extract_features(img_set, loadfromnames=True, cspace='BGR', spatial_size=(8,
                 elif image.shape[1::-1] == hog_size:
                     image_h = image
                 else:
-                    image_h = cv2.resize(image,hog_size)
+                    image_h = cv2.resize(image,hog_size,interpolation=cv2.INTER_AREA)
 
                 if hog_channel == 'ALL':
                     hog_features = []

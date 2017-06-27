@@ -71,17 +71,24 @@ The values of the 3 types of features were normalized using Scikits StandardScal
 ---
 
 
-####3. 
+#### Training 
 
 A linear SVM classifier was trained in [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py) between lines 150 and 175. I adjusted the value of C between 0.1 and 1000 by orders of magnitude, but found there was little change in accuracy results on the test set.  The accuracy rates ranged between a low of 92.7 when C was 0.1 and a high of 93.7 when C was set at 10, and back down to 93.1 at C=1000 (The results are shown in figure 6)
 
+The error rate generally was due to false positives for detection of cars on images that weren't cars.  Almost all car images were identified as cars.
 
-###Sliding Window Search
+---
 
-####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure6.png?raw=true"  width=700>
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+<i><u>Figure 6: Plot of Accuracy results as log10 C is varied</u></i>
 
+---
+
+
+### Sliding Window Search
+
+I initially set up a sliding image search with 5 sizes of windows (40 pixels, 80 pixels, 120 pixels, 160 pixels and 200 pixels).  After experimentation, and specifically after visualizing the results of each size window, I realized that I was able to obtain the best results when using 80 pixel windows alone.  This was partially because it reduced the size of false positives which lingered from frame to frame, making 
 ![alt text][image3]
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?

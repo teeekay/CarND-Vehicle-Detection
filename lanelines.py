@@ -338,25 +338,29 @@ def feed_the_beast(orig_imgBGR, data_store, convolve=False):
     cv2.putText(croptruimgpluslaneRGB, "Thresholds of", (905,20), cv2.FONT_HERSHEY_SIMPLEX,0.5,(100,255,255),1,cv2.LINE_AA)
     cv2.putText(croptruimgpluslaneRGB, "Sobel & Color Chans", (885,35), cv2.FONT_HERSHEY_SIMPLEX,0.5,(100,255,255),1,cv2.LINE_AA)
     cv2.putText(croptruimgpluslaneRGB, "Line Fit", (1120,25), cv2.FONT_HERSHEY_SIMPLEX,0.75,(100,255,255),1,cv2.LINE_AA)
-    cv2.putText(croptruimgpluslaneRGB, "Curve  Radius: {0:5,.0f} m".format(curvature), (40,30), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
-    cv2.putText(croptruimgpluslaneRGB, "Left   A:{0:.6f} B:{1:.5f} C:{2:3.0f}".format(data_store.avg_lft_fit[0],
-                                                                                      data_store.avg_lft_fit[1],
-                                                                                      data_store.avg_lft_fit[2]
-                                                                                     ), (40,150), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
-    cv2.putText(croptruimgpluslaneRGB, "Right  A:{0:.6f} B:{1:.5f} C:{2:3.0f}".format(data_store.avg_rgt_fit[0],
-                                                                                      data_store.avg_rgt_fit[1],
-                                                                                      data_store.avg_rgt_fit[2]
-                                                                                     ), (40,180), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
+    if curvature < 1500:
+        cv2.putText(croptruimgpluslaneRGB, "Curve  Radius: {0:5,.0f} m".format(curvature), (40,70), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
+    else:
+        cv2.putText(croptruimgpluslaneRGB, "Curve  Radius: Straight", (40,70), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
+    #cv2.putText(croptruimgpluslaneRGB, "Left   A:{0:.6f} B:{1:.5f} C:{2:3.0f}".format(data_store.avg_lft_fit[0],
+    #                                                                                  data_store.avg_lft_fit[1],
+    #                                                                                  data_store.avg_lft_fit[2]
+    #                                                                                 ), (40,150), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
+    #cv2.putText(croptruimgpluslaneRGB, "Right  A:{0:.6f} B:{1:.5f} C:{2:3.0f}".format(data_store.avg_rgt_fit[0],
+    #                                                                                  data_store.avg_rgt_fit[1],
+    #                                                                                  data_store.avg_rgt_fit[2]
+    #                                                                                 ), (40,180), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
     cv2.putText(croptruimgpluslaneRGB, "Frame:{0:5d} Timestamp:{1:3.03f}".format(data_store.frame, (data_store.frame/data_store.fps)),
-                                                                                    (40,210), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
+                                                                                    (40,30), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
 
 
 #    cv2.putText(croptruimgpluslaneRGB, "Left  Radius: {0:5,.0f} m".format(curve_radii[0]), (40,70), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
 #    cv2.putText(croptruimgpluslaneRGB, "Right Radius: {0:5,.0f} m".format(curve_radii[1]), (40,110), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
-    cv2.putText(croptruimgpluslaneRGB, "Off Lane Center: {0:2.2f} m".format(offcenter), (40,70), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
-    cv2.putText(croptruimgpluslaneRGB, "Speed: {0:3.0f} km/hr".format(speed), (40,110), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
+    #cv2.putText(croptruimgpluslaneRGB, "Off Lane Center: {0:2.2f} m".format(offcenter), (40,70), cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
+    cv2.putText(croptruimgpluslaneRGB, "Speed: {0:3.0f} km/hr".format(speed), (40,110), cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1,cv2.LINE_AA)
 
-    return croptruimgpluslaneRGB
+    imgBGR = cv2.cvtColor(croptruimgpluslaneRGB, cv2.COLOR_RGB2BGR)
+    return imgBGR
 
 def find_lines(data_store):
     binary_warped = np.copy(data_store.new_image)
