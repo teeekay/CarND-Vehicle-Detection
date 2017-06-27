@@ -107,7 +107,7 @@ Figure 6 shows the grid of 80 pixel wide windows overlapping at a ratio of 0.25 
 
 The sliding windows algorithm was implemented in the function `process_windows()` in [MultiWindow.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/MultiWindow.py).  I attempted to optimize the algorithm with a single run on the HOG gradients for the entire image strip that the sliding windows passed over for each window size.  Implementing this feature caused me to resize the HOG window size (as described in the HOG features section above) to 16x16 so that it was easier to set up specific overlap ratios with this method.
 
-Figures 7, 8, 9, and 10 illustrate the process of car detection with sliding windows;  In Figure 7, the SVM has identified overlapping patches as containing car(s).  In Figure 9, the pixels in the overlapping patches have been summed to create a heatmap. In figure 10, a bounding box has been drawn to encompass all contiguous pixels with heat values in excess of a threshold value, corresponding approximately to the car location(s). 
+Figures 7, 8, 9, and 10 illustrate the process of car detection with sliding windows;  In Figure 7, the SVM has identified overlapping patches as containing car(s).  In Figure 8, the pixels in the overlapping patches have been summed to create a heatmap, which is reduced to a binary map in Figure 9. In figure 10, a bounding box has been drawn to encompass all contiguous pixels with a heat value corresponding approximately to the car location(s). 
  
 ---
 
