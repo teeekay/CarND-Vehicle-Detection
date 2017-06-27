@@ -144,6 +144,10 @@ def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15, extern
     test_strip80 = np.copy(test_image[400:540,80:1280,:]) #for 80x80
     origin_80 = (80,400)
 
+    box_dim80 = (80,80)
+    test_strip80_2 = np.copy(test_image[480:640,900:1280,:]) #for 80x80
+    origin_80_2 = (900,480)
+
     box_dim120 = (120,120)
     test_strip120 = np.copy(test_image[400:580,80:1280,:]) #for 120x120
     origin_120 = (80,400)
@@ -162,6 +166,13 @@ def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15, extern
                             pix_per_cell=carfinder.pixpercellval, cell_per_block=carfinder.cellperblockval,
                             nbins=carfinder.histbinsval, bins_range=carfinder.histrangeval,
                             origin=origin_80)
+
+    features_80_2, strip1_images, window_locs_80_2 = process_windows(test_strip80_2, windowshape=box_dim80,
+                            hogwindowsize=carfinder.hogsizeval, colorwindowsize=carfinder.spatialsizeval,
+                            overlapratio=carfinder.overlapratioval, orient=carfinder.orientval,
+                            pix_per_cell=carfinder.pixpercellval, cell_per_block=carfinder.cellperblockval,
+                            nbins=carfinder.histbinsval, bins_range=carfinder.histrangeval,
+                            origin=origin_80_2)
 
     #features_120, strip1_images, window_locs_120 = process_windows(test_strip120, windowshape=box_dim120,
     #                        hogwindowsize=carfinder.hogsizeval, colorwindowsize=carfinder.spatialsizeval,
@@ -185,10 +196,12 @@ def find_cars(test_image, carfinder, heat_clip_threshold, history_bar=15, extern
     #                        origin=(480,350))
 
     features = features_80
+    features.extend(features_80_2)
     #features.extend(features_120)
     #features.extend(features_160)
 
     window_locs = window_locs_80
+    window_locs.extend(window_locs_80_2)
     #window_locs.extend(window_locs_120)
     #window_locs.extend(window_locs_160)
 
@@ -238,36 +251,35 @@ for frame in road_images:
     test_image = cv2.imread(frame)
     draw_img, boxes, histheat, heat, test_boxes = find_cars(test_image, car_values, 4, history_bar=1)
 
-    fig = plt.figure(figsize=(18,6))
-    plt.imshow(test_boxes)
-    #plt.title('80 pixel Sliding Window Search')
-    plt.title('Window Search Hits')
-    fig.tight_layout()
-    #plt.savefig("./output_images/figure8.png")
-
-    fig = plt.figure(figsize=(18,6))
+    fig = plt.figure(figsize=(8,6))
     plt.imshow(draw_img)
     plt.title('Cars Located')
-    fig.tight_layout()
+    #fig.tight_layout()
     imagefilename="./output_images/figure10_"+str(i)+".png"
     plt.savefig(imagefilename)
+    i += 1
+
+    fig = plt.figure(figsize=(8,6))
+    plt.imshow(test_boxes)
+    plt.title('80 pixel Sliding Window Search')
+    #plt.title('Window Search Hits')
+    #fig.tight_layout()
+    #plt.savefig("./output_images/figure8.png")
+
 
     heat = car_values.getlastheatval()
     heat = heat * 40
-    fig = plt.figure(figsize=(18,6))
+    fig = plt.figure(figsize=(8,6))
     plt.imshow(heat,cmap='hot')
     plt.title('Heat Map')
-    fig.tight_layout()
+    #fig.tight_layout()
     #plt.savefig("./output_images/figure9.png")
 
-    fig = plt.figure(figsize=(18,6))
+    fig = plt.figure(figsize=(8,6))
     plt.imshow(histheat,cmap='hot')
-    plt.title('Binary Heat Map')
-    fig.tight_layout()
-
-    i += 1
-
-
+    plt.title('Thresholded Binary Heat Map')
+    #plt.savefig("./output_images/figure9a.png")
+    #fig.tight_layout()
 
     #plt.imshow(heat,cmap='hot')
 '''

@@ -104,73 +104,84 @@ Figures 8, 9 and 10 illustrate the process of car detection;  In figure 8 the SV
  
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure8.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure8.png?raw=true"  width=700>
 
 <i><u>Figure 8: Visualization of Overlapping windows where SVM detected a Car</u></i>
 
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure9.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure9.png?raw=true"  width=700>
 
 <i><u>Figure 9: Visualization of Heat created by adding overlapping SVM Detections of Cars</u></i>
 
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_1.png?raw=true"  width=700>
 
 <i><u>Figure 10: Identification of Car Location based on Thresholded Heat Values</u></i>
 
 ---
 
-The following images demonstrate where cars were identified on all of the images in the sample folder.  A threshold heat value of 4 was used to discriminate between 
+The following images demonstrate how the process was able to correctly identify the cars on all of the images in the test_images folder without false positives.  A threshold heat value of 4 was used to discriminate against false positives.
 
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_1.png?raw=true"  width=1000>
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_2.png?raw=true"  width=1000>
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_3.png?raw=true"  width=1000>
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_4.png?raw=true"  width=1000>
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_5.png?raw=true"  width=1000>
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_6.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_1.png?raw=true"  width=500>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_2.png?raw=true"  width=500>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_3.png?raw=true"  width=500>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_4.png?raw=true"  width=500>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_5.png?raw=true"  width=500>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure10_6.png?raw=true"  width=500>
 
-<i><u>Figure 10: Identification of Car Location based on Thresholded Heat Values</u></i>
+<i><u>Figure 11: Identification of Car Locations in images in test_images directory</u></i>
 
 ---
-
 
 
 ### Video Implementation
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+
+Here's my [project_video](./project_video_outputA.mp4). The code to generate the video is called from [videoprocessor.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/videoprocessor.py) and in [image_screener.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/image_screener.py).  I was also able to add in my code from the lane detection project to enable a combined output of lane detection and vehicle detection.
+
+### Filtering strategy for video
+
+The combination of the hard edge on the median wall, which occasionally generates false positives on it's own, and partial views of cars above the median wall combine to create heat values above the threshold value.  
+
+I implemented a circular buffer (lines 111 to 137 of image_screener.py)  into which I put frames of the heat values generated so that I could threshold the heat values based of the numbers of "hits" on each pixel in the buffer.  For example I could set up the buffer to hold 20 frames, and threshold pixels that had hits on 15 of the frames in the buffer.  I found this level of "history threshold" was required when I was using multiple size windows.  This resulted in a more than 0.5 second delay after a car was first seen before it could be displayed, which I did not consider to be optimal.
+
+I adjusted the buffer so that I could store heat values obtained individually for each size (up to 3 in implementation) window used.  This allowed me to display the heat generated from each window size at the right of the output video to better see what was going on.  Once I did this, I realized that I only really needed to use the one size of window (80 pixels per side).  When I reverted to using only size 80 pixel windows, I found that the history threshold could be reduced to 5 frames in a 7 frame buffer to get a good result with occasional false positives at the left of the screen.  
+
+Another issue in this implementation of the history threshold is during situations where the car goes over a bump, all the objects are displaced rapidly in the image for a few frames, which might cause the history threshold to prevent them from being displayed.  Also oncoming cars may move across the screen too fast to allow detection if the the history threshold is set too high.
+
+When determining the appropriate heat threshold to use, I had to consider both eliminating false positives, but also maintaining detection of faint positives (e.g. the white car at t=24 to 30s) for as long as possible.  I selected a threshold of 5 which worked relatively well, but I have thought of other possible strategies to improve overall detection (maybe tying the threshold to the vertical position so that the threshold is decreased as the item moves up the screen (and becomes smaller)).
+
+### Bounding Boxes
+
+The functions to create and threshold heatmaps and then generate bounding boxes around the label instances are located in image_screener.py between lines 32 and 92.   
 
 
-####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+### Classifier Improvement
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
-
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
-
-### Here are six frames and their corresponding heatmaps:
-
-![alt text][image5]
-
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
-
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
+The classifier was often triggered by the yellow lines and median barrier (possibly in combination with one or two distinct spots) at the left side of the lane.  I attempted to improve performance by adding a set of images cropped from these areas and adding them to the training set as non-car images.  I did not see as much response from the yellow lines after this, but the median barrier continued to trigger the classifier.  I may not have added enough images at the correct scale to provide enough negative results to prevent false positives in this situation.
 
 
+### Discussion
 
----
+I found that on my computer, the car detection algorithm took approximately 0.12 seconds per frame which is about 1/6th the speed required (although when combined with the lane detection it took about 0.5 secs per frame).  I think the code could be optimized and rewritten in C to run fast enough to produce real-time output.  However, convolutional neural network approaches like [YOLO](https://pjreddie.com/darknet/yolo/) and [YOLT](https://medium.com/the-downlinq/you-only-look-twice-multi-scale-object-detection-in-satellite-imagery-with-convolutional-neural-38dad1cf7571) look like they would be more flexible and just as fast (especially if running on GPU like hardware).
 
-###Discussion
+Although there was a relatively large image set to use when training the SVM, it appeared that the set did not cover all image conditions, and may have more dark than light cars.  I think that reduced false positives could be found with a larger variety of non-car images.  
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+As discussed above, the threshold values could be tied to vertical position to enable better detection of cars further up the image.  
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Use of the history threshold enabled a small amount of stabilization of the detected car shape.  It was still quite jittery.  This could be improved by storing the shape for each frame, and averaging it over multiple frames.
+
+Models of expected car motions could be implemented to attempt to handle the following four main situations and to enable better tracking and assessment of risk from the objects:
+ a) cars parallel to the car at relatively slow speeds compared to the car,
+ b) stationary cars (e.g. parked at the side of the road),
+ c) oncoming cars moving towards the car at high speed,
+ d) cars moving perpendicularly to the car (e.g. from a side street).   
 
 
-Note:  For this project I explored using the Atom editor in conjunction with the Hydrogen package. This enabled interaction with the python code within the editor, while I was working to produce self contained python code as opposed to iPython notebooks.
+### Additional Notes
 
+For this project I explored using the Atom editor in conjunction with the Hydrogen package (which connects to a Jupyter kernel) for the first time.  This enabled me to interact fairly effectively with the python code within the editor, while I was working to produce self contained python code (as opposed to iPython notebooks).

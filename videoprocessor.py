@@ -27,7 +27,7 @@ fourcc = cv2.VideoWriter_fourcc(*"DIVX")
 framewidth = framewidth+framewidth//4
 
 # set up the output file
-video_filename='project_video_output.mp4'
+video_filename='project_video_outputA.mp4'
 out = cv2.VideoWriter(video_filename, fourcc, fps, (framewidth, frameheight))
 print("Writing to video file {}".format(video_filename))
 
@@ -49,7 +49,7 @@ t0 = time.time()
 t1 = time.time()
 
 # threshold of heat value in current frame required to register a hit
-heat_threshold = 3
+heat_threshold = 4 #3
 
 # threshold of number of frames within recent history that pixel needs to exceed
 # heat threshold for heat to be valid
