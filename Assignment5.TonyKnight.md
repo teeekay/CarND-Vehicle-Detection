@@ -1,63 +1,80 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
+## **Vehicle Detection Project**
 
 ---
 
-**Vehicle Detection Project**
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/videograb00002.png?raw=true"  width=1000>
 
-The goals / steps of this project are the following:
-
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
-
-[//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
-
-## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+<i><u>Figure 1 Snapshot from Vehicle Detection Video</u></i>
 
 ---
-###Writeup / README
-
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
-
-You're reading it!
-
-###Histogram of Oriented Gradients (HOG)
-
-####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
-
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
-
-I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
-
-![alt text][image1]
-
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
-
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 
-![alt text][image2]
+### Writeup by Tony Knight - 2017/06/01 
 
-####2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of parameters and...
+#### Training Set
 
-####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+I decided to use the GTI data set as the basis for training the Support Vector Machine Classifier.  However, this data set was slightly imbalanced, with more images which were "non-vehicles" than images of vehicles.  I supplemented the car dataset with 1200 images of cars from the KITTI dataset, producing a total of 4023 images of cars and 4047 images of non-cars in the dataset.  I also added a few samples of "curated" non-car images taken from the project video in order to attempt to train the classifier away from some negative hits.  
 
-I trained a linear SVM using...
+For the test dataset I used images of cars from the KITTI dataset (excluding those used in the training set) and non-car images from the extras dataset (taken from the video).  Figure 2 shows images of "cars" and "non-cars" used in the training and test sets.
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure2.png?raw=true"  width=700>
+
+<i><u>Figure 2: Images of Cars and Non-cars used in training and Test sets</u></i>
+
+---
+
+### Training 
+
+I decided to use a combination of the color and histogram of gradients (HOG) features to characterize each image patch.  I wanted to make the size of the patches as small as possible in  order to speed up processing during image analysis.  I decided that I would resize the image patches to 16x16 pixels to extract the HOG, and 8x8 pixels to extract color information.  Based on initial tests with the test images I decided to use the YCrCb color space, and to use all 3 of the color channels in the HOG analysis.
+
+
+### Histogram of Oriented Gradients (HOG)
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure5.png?raw=true"  width=700>
+
+<i><u>Figure 3: Image of Car and HOG visualization produced from Y color channel of image in YCrCB colorspace</u></i>
+
+---
+
+The code to run the HOG analysis is contained in function `extract_features()` and in function `get_hog_features()` in [feature_extraction.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/feature_extraction.py) on lines 94 through 117, and lines 5 to 16 respectively.  The scikit implementation of `hog()` was called from these functions to calculate the HOG features
+
+
+I tried various combinations of parameters and ended up using 4 pixels per side on cells, and using 2x2 cells in a block.  This resulted in a total of 3x3 histograms of gradients from each image.  Part of the reason for selecting this size, was it facilitated implementation of a sliding window with overlap ratios of 0.25, or 0.5 when only calculating HOGs once on the whole image (as 4 histograms are passed over (3 in the patch and one on the boundary of the patch) when sliding a window across the width of a patch in one direction).
+
+I chose to use 9 bins for the orientations of the histograms as it produced good results and using more bins did not improve results.
+
+The selection of these parameters resulted in 3x3x2x2x9=324 HOG features for each  of the 3 color channels on the image patch (972 total). 
+
+I set transform_sqrt to True, even though this slightly increased the hog calculation time, as it appeared to produce better results when I tested the implementation on the video.    
+
+#### Color features
+
+Using a patch size of 8x8 pixels, the color distribution for each of the Y, Cr and Cb color channels was split between 16 histogram bins in function `color_hist()` in [feature_extraction.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/feature_extraction.py) (lines 32 to 45)  resulting in 48 features.  The value of each pixel in each color channel was also used as a feature resulting in 3x8x8 = 192 features.
+
+#### Scaler
+
+The values of the 3 types of features were normalized using Scikits StandardScaler which was fit to the training set on line 99 of [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py).  Figure 4 and 5 show images of cars and non-cars in the training set, and the resulting plots of features before and after normalization. 
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure3.png?raw=true"  width=700>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure4.png?raw=true"  width=700>
+
+
+<i><u>Figures 4 and 5: Images of Car and non Car and resulting raw and scaled feature sets</u></i>
+
+---
+
+
+####3. 
+
+A linear SVM classifier was trained in [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py) between lines 150 and 175. I adjusted the value of C between 0.1 and 1000 by orders of magnitude, but found there was little change in accuracy results on the test set.  The accuracy rates ranged between a low of 92.7 when C was 0.1 and a high of 93.7 when C was set at 10, and back down to 93.1 at C=1000 (The results are shown in figure 6)
+
 
 ###Sliding Window Search
 
@@ -105,4 +122,7 @@ Here's an example result showing the heatmap from a series of frames of video, t
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+
+
+Note:  For this project I explored using the Atom editor in conjunction with the Hydrogen package. This enabled interaction with the python code within the editor, while I was working to produce self contained python code as opposed to iPython notebooks.
 
