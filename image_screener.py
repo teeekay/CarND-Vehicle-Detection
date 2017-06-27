@@ -254,32 +254,31 @@ for frame in road_images:
     fig = plt.figure(figsize=(8,6))
     plt.imshow(draw_img)
     plt.title('Cars Located')
-    #fig.tight_layout()
+    fig.tight_layout()
     imagefilename="./output_images/figure10_"+str(i)+".png"
     plt.savefig(imagefilename)
     i += 1
 
     fig = plt.figure(figsize=(8,6))
     plt.imshow(test_boxes)
-    plt.title('80 pixel Sliding Window Search')
-    #plt.title('Window Search Hits')
-    #fig.tight_layout()
-    #plt.savefig("./output_images/figure8.png")
-
+    #plt.title('80 pixel Sliding Window Search')
+    plt.title('Window Search Hits')
+    fig.tight_layout()
+    plt.savefig("./output_images/figure8.png")
 
     heat = car_values.getlastheatval()
     heat = heat * 40
     fig = plt.figure(figsize=(8,6))
     plt.imshow(heat,cmap='hot')
     plt.title('Heat Map')
-    #fig.tight_layout()
-    #plt.savefig("./output_images/figure9.png")
+    fig.tight_layout()
+    plt.savefig("./output_images/figure9.png")
 
     fig = plt.figure(figsize=(8,6))
     plt.imshow(histheat,cmap='hot')
     plt.title('Thresholded Binary Heat Map')
-    #plt.savefig("./output_images/figure9a.png")
-    #fig.tight_layout()
+    fig.tight_layout()
+    plt.savefig("./output_images/figure9a.png")
 
     #plt.imshow(heat,cmap='hot')
-'''
+#'''
