@@ -9,7 +9,7 @@
 ---
 
 
-### Writeup by Tony Knight - 2017/06/01 
+### Writeup by Tony Knight - 2017/06/27 
 
 ## Training
 
@@ -17,7 +17,7 @@
 
 I decided to use the GTI data set as the basis for training the Support Vector Machine Classifier.  However, this data set was slightly imbalanced, with more images which were "non-vehicles" than images of vehicles.  I supplemented the car dataset with 1200 images of cars from the KITTI dataset.   I also added a few samples of "curated" non-car images taken from the project video in order to attempt to train the classifier away from some false positive hits.  This resulted in a total of 4023 images of cars and 4047 images of non-cars (which I trimmed to 4023) in the training dataset .    
 
-For the test dataset I used images of cars from the KITTI dataset (excluding those used in the training set) and non-car images from the extras dataset (taken from the video).  Figure 2 shows images of "cars" and "non-cars" used in the training and test sets.  I took a random sample of approximately 800 images (20% of the size of the training set) from each category in the test set to evaluate the performance of the classifier.
+For the test dataset I used images of cars from the KITTI dataset (excluding those used in the training set) and non-car images from the extras dataset (taken from the video).  I took a random sample of approximately 800 images (20% of the size of the training set) from each category in the test set to evaluate the performance of the classifier.  Figure 2 shows images of "cars" and "non-cars" used in the training and test sets.
 
 ---
 
@@ -57,7 +57,7 @@ Using a patch size of 8x8 pixels, the color distribution for each of the Y, Cr a
 
 #### Scaler
 
-The values of the 3 types of features (Color Histogram, Color Distribution, HOG) were normalized using Scikit's `StandardScaler()` which was fit to the training set on line 99 of [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py).  Figures 4 and 5 show images of cars and non-cars in the training set, and the resulting plots of features before and after normalization. 
+The values of the 3 types of features (Color Histogram, Color Distribution, HOG) were normalized using Scikit's `StandardScaler()` which was fit to the training set on line 99 of [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py).  Figure 4 shows images of cars and non-cars in the training set, and the resulting plots of features before and after normalization. 
 
 ---
 
@@ -65,14 +65,14 @@ The values of the 3 types of features (Color Histogram, Color Distribution, HOG)
 <img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure4.png?raw=true"  width=700>
 
 
-<i><u>Figures 4 and 5: Images of Car and non Car and resulting raw and scaled feature sets</u></i>
+<i><u>Figure 4: Images of Car and non Car patches and resulting raw and scaled feature sets</u></i>
 
 ---
 
 
 ### Training Classifier
 
-Scikit's `LinearSVC()` SVM classifier was trained and tested in [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py) between lines 165 and 176.  I adjusted the value of the C hyperparameter between 0.1 and 1000 in steps of orders of magnitude, but found there was little change in accuracy results on the test set.  The accuracy rates ranged between a low of 92.7 when C was 0.1 and a high of 93.7 when C was set at 10, and back down to 93.1 at C=1000 (The results are shown in figure 6)
+Scikit's `LinearSVC()` SVM classifier was trained and tested in [combofeatures.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/combofeatures.py) between lines 165 and 176.  I adjusted the value of the C hyperparameter between 0.1 and 1000 in steps of orders of magnitude, but found there was little change in accuracy results on the test set.  The accuracy rates ranged between a low of 92.7 when C was 0.1 and a high of 93.7 when C was set at 10, and back down to 93.1 at C=1000 (The results are shown in Figure 5)
 
 The error rate generally was due to false positives for detection of cars on images that weren't cars.  Almost all car images were identified as cars.
 
@@ -80,7 +80,7 @@ The error rate generally was due to false positives for detection of cars on ima
 
 <img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure6.png?raw=true"  width=400>
 
-<i><u>Figure 6: Plot of Accuracy results as log10 C is varied</u></i>
+<i><u>Figure 5: Plot of Accuracy results as log10 C is varied</u></i>
 
 ---
 
@@ -89,37 +89,43 @@ The error rate generally was due to false positives for detection of cars on ima
 
 I initially set up a sliding image search with 5 sizes of windows (edge lengths 40 pixels, 80 pixels, 120 pixels and 200 pixels).  I ran tests with overlap ratios of 0.5 and 0.25, and found that 0.25 produced better results.  After experimentation, and specifically after visualizing the response when using each size window, I realized that I was able to obtain the best results when using 80 pixel windows alone.  
 
-Use of the smaller 40 pixel wide windows did not detect smaller cars on the horizon, but required a large amount of processing time, so I dropped them.
+Use of the smaller 40 pixel wide windows did not detect smaller cars on the horizon, but required a large amount of processing time, so I stopped using them.
 
 I found that the additional use of windows larger than 80 pixels width added more false positives, but did not really add any better detection of cars that were not picked up by the 80 pixel windows.  The program attempts to limit displaying false positives in the videostream by using a buffer of heat image frames, and thresholding for pixels that have had heat for a specified number of frames.  However, when using the larger windows, I found that large areas remained "hot" for long periods in areas where false positives were detected. The history buffer threshold had to be increased to a relatively large threshold (up to 15 frames) to eliminate these false positives.  This had negative effect of causing a significant delay in displaying valid detection of new cars.
 
 Removal of the larger window sizes enabled the history threshold to be reduced down to 5 frames, which resulted in much faster response to detected cars.
 
-Figure 7 shows the grid of 80 pixel wide windows overlapping at a ratio of 0.25 across an example image frame.
+Figure 6 shows the grid of 80 pixel wide windows overlapping at a ratio of 0.25 across an example image frame.
 
 ---
 
-<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure7.png?raw=true"  width=1000>
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure7.png?raw=true"  width=700>
 
-<i><u>Figure 7: Visualization of overlapping 80 pixel Sliding Window Search Area</u></i>
+<i><u>Figure 6: Visualization of overlapping 80 pixel Sliding Window Search Area</u></i>
 
 ---
 
 The sliding windows algorithm was implemented in the function `process_windows()` in [MultiWindow.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/MultiWindow.py).  I attempted to optimize the algorithm with a single run on the HOG gradients for the entire image strip that the sliding windows passed over for each window size.  Implementing this feature caused me to resize the HOG window size (as described in the HOG features section above) to 16x16 so that it was easier to set up specific overlap ratios with this method.
 
-Figures 8, 9 and 10 illustrate the process of car detection with sliding windows;  In figure 8, the SVM has identified overlapping patches as containing car(s).  In Figure 9, the pixels in the overlapping patches have been summed to create a heatmap. In figure 10, a bounding box has been drawn to encompass all contiguous pixels with heat values in excess of a threshold value, corresponding approximately to the car location(s). 
+Figures 7, 8, 9, and 10 illustrate the process of car detection with sliding windows;  In Figure 7, the SVM has identified overlapping patches as containing car(s).  In Figure 9, the pixels in the overlapping patches have been summed to create a heatmap. In figure 10, a bounding box has been drawn to encompass all contiguous pixels with heat values in excess of a threshold value, corresponding approximately to the car location(s). 
  
 ---
 
 <img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure8.png?raw=true"  width=700>
 
-<i><u>Figure 8: Visualization of Overlapping windows where SVM detected a Car</u></i>
+<i><u>Figure 7: Visualization of Overlapping windows where SVM detected a Car</u></i>
 
 ---
 
 <img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure9.png?raw=true"  width=700>
 
-<i><u>Figure 9: Visualization of Heat created by adding overlapping SVM Detections of Cars</u></i>
+<i><u>Figure 8: Visualization of Heat created by adding overlapping SVM Detections of Cars</u></i>
+
+---
+
+<img src="https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/output_images/figure9a.png?raw=true"  width=700>
+
+<i><u>Figure 9: Visualization of Binary Heat Map after applying Thresholds</u></i>
 
 ---
 
@@ -156,7 +162,7 @@ The combination of the hard edge on the median wall, which occasionally generate
 
 I implemented a circular buffer (lines 111 to 137 of [image_screener.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/image_screener.py)) into which I put frames of the heat values generated so that I could threshold the heat values based on the numbers of "hits" on each pixel in the buffer.  For example, I could set up the buffer to hold 20 frames, and threshold pixels that had hits on 15 of the frames in the buffer.  I found this level of "history threshold" was required when I was using multiple size windows.  This resulted in a more than 0.5 second delay after a car was first seen before it could be displayed, which I did not consider to be optimal.
 
-I adjusted the buffer so that I could store heat values obtained individually for each size window used.  This allowed me to display the heat generated from each window size at the right of the output video to better visualize what was going on.  Once I did this, I realized that I only really needed to use the one size of window (80 pixels per side).  When I reverted to using only size 80 pixel windows, I found that the history threshold could be reduced to 5 frames in a 7 frame buffer to get relatively good results with only occasional false positives at the left side of the screen.  
+I adjusted the buffer so that I could store heat values obtained individually for each size window used.  This allowed me to display the heat generated from each window size at the right of the output video to better visualize what was going on.  Once I did this, I realized that I only really needed to use the one size of window (80 pixels per side).  When I switched to using only size 80 pixel windows, I found that the history threshold could be reduced to 5 frames in a 7 frame buffer to get relatively good results with only occasional false positives at the left side of the screen.  
 
 An issue in this implementation of the history threshold is that when the car goes over a bump (22.5s to 24 s in the video), all the objects are displaced rapidly in the image for a few frames, which causes the history threshold to prevent detected objects from being displayed.  The history threshold may also prevent oncoming cars from being displayed well as they could move across the screen too fast to allow detection in the same area of the screen on subsequent frames.
 
@@ -176,7 +182,9 @@ The functions to create and threshold heatmaps and then generate bounding boxes 
 
 ---
 
-SciPy's `ndimage.measurements.label()` function is called to locate the separate contiguous instances of thresholded values in the binary image.  The `draw_labeled_bboxes()` function on lines 68 to 92 of image_screener.py extracts the top left and bottom right co-ordinates of the labelled areas, and then draws bounding boxes.  For this video, the function was optimized to draw the boxes in different colors, and to attempt to maintain the same object in the same color for as long as possible.  The `label()` function produces a list sorted from the top to bottom of the image.  Since the main targets in the video were located on the right side of the image, the box locations were re-sorted by their right hand co-ordinates to make boxes at the right side of the image the first targets drawn.
+SciPy's `ndimage.measurements.label()` function is called to locate the separate contiguous instances of thresholded values in the binary image.  The `draw_labeled_bboxes()` function on lines 68 to 92 of [image_screener.py](https://github.com/teeekay/CarND-Vehicle-Detection/blob/master/image_screener.py) extracts the top left and bottom right co-ordinates of the labelled areas, and then draws bounding boxes.
+
+For this video, the function was optimized to draw the boxes in different colors, and to attempt to maintain the same object box in the same color for as long as possible.  The `label()` function produces a list sorted from the top to bottom of the image.  Since the main stable targets in the video were located on the right side of the image, the box locations were re-sorted by their right hand co-ordinates to make boxes at the right side of the image the first targets drawn.
 
 
 #### Classifier Improvement
@@ -197,7 +205,7 @@ Although there was a relatively large image set to use when training the SVM, it
 
 #### Threshold Values
 
-As discussed above, the use of a heat threshold value and (possibly the history threshold value) which varied according to the position on the Frame could be explored to evaluate if it would enable better detection of cars further up the image, and better response to oncoming cars at the left of the image.  
+As discussed above, the use of a heat threshold value and (possibly the history threshold value) which varies according to the position on the image frame could be explored to evaluate if it would enable better detection of cars further up the image, and better response to oncoming cars at the left of the image.  
 
 #### Object Bounding Box
 
@@ -205,10 +213,13 @@ Use of the history threshold enabled a small amount of stabilization of the dete
 
 Models of expected car motions could attempt to accommodate the following four situations that I think should be expected and would enable the system to assess risk from the objects:
 
- a) cars parallel to the car at relatively slow speeds compared to the car,
- b) stationary cars (e.g. parked at the side of the road),
- c) oncoming cars moving towards the car at high speed,
- d) cars moving perpendicularly to the car (e.g. from a side street).   
+a) cars parallel to the car at relatively slow speeds compared to the car,
+
+b) stationary cars (e.g. parked at the side of the road),
+
+c) oncoming cars moving towards the car at high speed,
+
+d) cars moving perpendicularly to the car (e.g. from a side street).   
 
 
 ### Additional Notes
